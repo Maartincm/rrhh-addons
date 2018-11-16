@@ -5,9 +5,6 @@ import csv
 import sys
 import time
 
-# Hay que sacar este comentario. Viene de pruebas GIT
-
-
 
 def loteHandler (fileName):
 	''' Registrando nuevo archivo en MySQL y obteniendo número de lote'''
