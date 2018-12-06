@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import mysql.connector
 import os
+import shutil
 import csv
 import sys
 import time
+
 
 
 def loteHandler (fileName):
@@ -19,8 +21,8 @@ def loteHandler (fileName):
 	return mysCursor.lastrowid
 
 # Abriendo conexion a MySQL
-cnx = mysql.connector.connect(user='root', password='..LetyTyle',
-                              host='127.0.0.1',
+cnx = mysql.connector.connect(user='root', password='Mum2010Xum',
+                              host='10.0.1.17',
                               database='RRHH')
 	
 mysCursor = cnx.cursor()
@@ -28,11 +30,11 @@ mysCursor = cnx.cursor()
 
 # Seteando variables!
 # Windows
-##workingPath = "C:\Argensun\RRHH\Fichadas"
-##destinationPath = "C:\Argensun\RRHH\Fichadas\Procesados"
+workingPath = "C:\Argensun\RRHH\Fichadas"
+destinationPath = "C:\Argensun\RRHH\Fichadas\Procesados"
 # Linux
-workingPath = "/home/rodrigerar/Dropbox/Proyectos/RRHH/files"
-destinationPath = "/home/rodrigerar/Dropbox/Proyectos/RRHH/files/Procesados"
+##workingPath = "/home/rodrigerar/Dropbox/Proyectos/RRHH/files"
+##destinationPath = "/home/rodrigerar/Dropbox/Proyectos/RRHH/files/Procesados"
 
 # Buscando archivo/s de novedades
 filesList = os.listdir(workingPath)
@@ -61,7 +63,16 @@ for fileName in filesList:
 
 		# Moviendo archivo
 		# Windows
-		##destinationFile = "{}\\PROCESADO_{}_{}".format(destinationPath, time.strftime("%Y%m%d%H%M%S"), fileName)
-		##os.rename(workingPath+"\\"+fileName, destinationFile)
+		destinationFile = "{}\\PROCESADO_{}_{}".format(destinationPath, time.strftime("%Y%m%d%H%M%S"), fileName)
+		os.rename(workingPath+"\\"+fileName, destinationFile)
+
+		# Comprimiento el archivo
+		destinationFileZip = destinationFile.split(".")
+		shutil.make_archive(destinationFileZip[0], "zip", destinationPath, destinationFile)
+		os.remove(destinationFile) # Borrando el txt, despues de haberlo zipeado!
+
+		# Subiendo archivo a Amazon S3
+		osCommando = 'aws s3 cp --quiet "{}.zip" s3://argensunawsbackup/aws-anviz-prod/backups-fichadas/'.format(destinationFileZip[0])
+		os.system(osCommando)
 
 cnx.close()
