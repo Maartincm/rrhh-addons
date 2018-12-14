@@ -69,14 +69,18 @@ def getFichadas(idFile, nameFile):
 	try:
 		cursor = myCnx.cursor()
 		query = '''SELECT 
-					DATE_ADD(fecha_hora, INTERVAL 3 HOUR),
-					numero_legajo,
-	    			CASE id_tipo_evento
+					DATE_ADD(fichada.fecha_hora, INTERVAL 3 HOUR),
+					fichada.numero_legajo,
+	    			CASE fichada.id_tipo_evento
 	    				WHEN 0 THEN 'Entrada'
 	    				WHEN 1 THEN 'Salida'
 	    				WHEN 2 THEN 'Salida'
-	    				END
-					FROM fichada WHERE id_archivo = {}'''.format(idFile)
+	    				END,
+	    			dispositivo.nombre
+					FROM fichada 
+						INNER JOIN dispositivo
+							ON (fichada.id_dispositivo = dispositivo.id)
+					WHERE id_archivo = {}'''.format(idFile)
 		cursor.execute(query)
 		data = cursor.fetchall()
 	except mysql.connector.errors.Error as err:
@@ -85,11 +89,11 @@ def getFichadas(idFile, nameFile):
 
 	for row in data:
 		if (row[2] == 'Entrada'):
-			attendance = {'employee_id': row[1], 'check_in': ''}
+			attendance = {'employee_id': row[1], 'check_in': '', 'reloj': row[3]}
 			attendance['check_in'] = '{}'.format(row[0])
 			Attendance.create(attendance)
 		else:
-			attendance = {'employee_id': row[1], 'check_out': ''}
+			attendance = {'employee_id': row[1], 'check_out': '', 'reloj': row[3]}
 			attendance['check_out'] = '{}'.format(row[0])
 			Attendance.create(attendance)
 
@@ -106,12 +110,12 @@ def getFichadas(idFile, nameFile):
 #        #
 ##########
 
-configPath = "/home/rodrigerar/Dropbox/Proyectos/RRHH/python" # 1) Setear el path donde se encuentra el erchivo mysql.conf
+configPath = "/home/rodrigerar/Documents/rrhh-addons/python" # 1) Setear el path donde se encuentra el erchivo mysql.conf
 configFile = os.path.join (configPath, "mysql.conf")
 
 # Conectando a MySQL:
 mysqlConnect()
-odooConnect()
+#odooConnect()
 
 # Buscando novedades para procesar:
 if (getArchivos() != 0):
