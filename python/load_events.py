@@ -33,8 +33,8 @@ mysCursor = cnx.cursor()
 workingPath = "C:\Argensun\RRHH\Fichadas"
 destinationPath = "C:\Argensun\RRHH\Fichadas\Procesados"
 # Linux
-##workingPath = "/home/rodrigerar/Dropbox/Proyectos/RRHH/files"
-##destinationPath = "/home/rodrigerar/Dropbox/Proyectos/RRHH/files/Procesados"
+#workingPath = "/home/rodrigerar/Documents/rrhh-fichadas/rrhh-addons/files"
+#destinationPath = "/home/rodrigerar/Documents/rrhh-fichadas/rrhh-addons/files/procesados"
 
 # Buscando archivo/s de novedades
 filesList = os.listdir(workingPath)
@@ -63,8 +63,14 @@ for fileName in filesList:
 
 		# Moviendo archivo
 		# Windows
-		destinationFile = "{}\\PROCESADO_{}_{}".format(destinationPath, time.strftime("%Y%m%d%H%M%S"), fileName)
+		timeStamp = time.strftime("%Y%m%d%H%M%S")
+		destinationFile = "{}\\PROCESADO_{}_{}".format(destinationPath, timeStamp, fileName)
 		os.rename(workingPath+"\\"+fileName, destinationFile)
+
+		# Unix
+		#timeStamp = time.strftime("%Y%m%d%H%M%S")
+		#destinationFile = "{}/PROCESADO_{}_{}".format(destinationPath, timeStamp, fileName)
+		#os.rename(workingPath+"/"+fileName, destinationFile)
 
 		# Comprimiento el archivo
 		destinationFileZip = destinationFile.split(".")
@@ -73,6 +79,13 @@ for fileName in filesList:
 
 		# Subiendo archivo a Amazon S3
 		osCommando = 'aws s3 cp --quiet "{}.zip" s3://argensunawsbackup/aws-anviz-prod/backups-fichadas/'.format(destinationFileZip[0])
+		os.system(osCommando)
+
+		# Taggeando archivo en el backet S3
+		fileNameSplit = fileName.split(".")
+		backetFile = "PROCESADO_{}_{}.zip".format(timeStamp, fileNameSplit[0])
+		osCommando = 'aws s3api put-object-tagging --bucket argensunawsbackup --key s3://argensunawsbackup/aws-anviz-prod/backups-fichadas/{} \
+						--tagging TagSet=[{{Key=backup-30D,Value=Retencion-30-dias}}]'.format(backetFile)
 		os.system(osCommando)
 
 cnx.close()
