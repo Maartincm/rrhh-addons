@@ -33,8 +33,8 @@ mysCursor = cnx.cursor()
 workingPath = "C:\Argensun\RRHH\Fichadas"
 destinationPath = "C:\Argensun\RRHH\Fichadas\Procesados"
 # Linux
-##workingPath = "/home/rodrigerar/Dropbox/Proyectos/RRHH/files"
-##destinationPath = "/home/rodrigerar/Dropbox/Proyectos/RRHH/files/Procesados"
+#workingPath = "/home/rodrigerar/Documents/rrhh-fichadas/rrhh-addons/files"
+#destinationPath = "/home/rodrigerar/Documents/rrhh-fichadas/rrhh-addons/files/procesados"
 
 # Buscando archivo/s de novedades
 filesList = os.listdir(workingPath)
@@ -66,6 +66,11 @@ for fileName in filesList:
 		timeStamp = time.strftime("%Y%m%d%H%M%S")
 		destinationFile = "{}\\PROCESADO_{}_{}".format(destinationPath, timeStamp, fileName)
 		os.rename(workingPath+"\\"+fileName, destinationFile)
+
+		# Unix
+		#timeStamp = time.strftime("%Y%m%d%H%M%S")
+		#destinationFile = "{}/PROCESADO_{}_{}".format(destinationPath, timeStamp, fileName)
+		#os.rename(workingPath+"/"+fileName, destinationFile)
 
 		# Comprimiento el archivo
 		destinationFileZip = destinationFile.split(".")
