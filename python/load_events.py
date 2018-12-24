@@ -84,7 +84,7 @@ for fileName in filesList:
 		# Taggeando archivo en el backet S3
 		fileNameSplit = fileName.split(".")
 		backetFile = "PROCESADO_{}_{}.zip".format(timeStamp, fileNameSplit[0])
-		osCommando = 'aws s3api put-object-tagging --bucket argensunawsbackup --key s3://argensunawsbackup/aws-anviz-prod/backups-fichadas/{} \
+		osCommando = 'aws s3api put-object-tagging --bucket argensunawsbackup --key aws-anviz-prod/backups-fichadas/{} \
 						--tagging TagSet=[{{Key=backup-30D,Value=Retencion-30-dias}}]'.format(backetFile)
 		os.system(osCommando)
 
