@@ -27,14 +27,15 @@ cnx = mysql.connector.connect(user='root', password='Mum2010Xum',
 	
 mysCursor = cnx.cursor()
 
-
 # Seteando variables!
 # Windows
-workingPath = "C:\Argensun\RRHH\Fichadas"
-destinationPath = "C:\Argensun\RRHH\Fichadas\Procesados"
-# Linux
-#workingPath = "/home/rodrigerar/Documents/rrhh-fichadas/rrhh-addons/files"
-#destinationPath = "/home/rodrigerar/Documents/rrhh-fichadas/rrhh-addons/files/procesados"
+workingPath = "C:\\Argensun\\RRHH\\Fichadas"
+destinationPath = "C:\\Argensun\\RRHH\\Fichadas\\Procesados\\" + time.strftime('%Y%m')
+# Checking if backup folder already exists or not. If not exists will create it.
+try:
+    os.stat(destinationPath)
+except:
+    os.mkdir(destinationPath)
 
 # Buscando archivo/s de novedades
 filesList = os.listdir(workingPath)
@@ -62,15 +63,9 @@ for fileName in filesList:
 		cnx.commit()
 
 		# Moviendo archivo
-		# Windows
 		timeStamp = time.strftime("%Y%m%d%H%M%S")
 		destinationFile = "{}\\PROCESADO_{}_{}".format(destinationPath, timeStamp, fileName)
 		os.rename(workingPath+"\\"+fileName, destinationFile)
-
-		# Unix
-		#timeStamp = time.strftime("%Y%m%d%H%M%S")
-		#destinationFile = "{}/PROCESADO_{}_{}".format(destinationPath, timeStamp, fileName)
-		#os.rename(workingPath+"/"+fileName, destinationFile)
 
 		# Comprimiento el archivo
 		destinationFileZip = destinationFile.split(".")
