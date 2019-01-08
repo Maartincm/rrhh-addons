@@ -39,7 +39,10 @@ def configure_logger(filename, level='info'):
     log_handler = logging.StreamHandler()
     log_handler.setFormatter(log_formatter)
 
-    log_file_handler = logging.FileHandler(filename)
+    file_path = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        filename)
+    log_file_handler = logging.FileHandler(file_path)
     log_file_handler.setFormatter(log_formatter)
 
     _logger.addHandler(log_handler)
@@ -55,7 +58,7 @@ class ConfigFileReader(configparser.ConfigParser):
 
     def __init__(self, filename, *args, **kwargs):
         self.filename = filename
-        super().__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         _logger.info("Reading Configuration File %s" % self.filename)
         file_read = self.read(self.filename)
         if not file_read:
@@ -118,7 +121,7 @@ def cr(fnct):
                  "for Mysql Database"))
         cr = obj.connection.cursor()
         res = fnct(obj, cr, *args, **kwargs)
-        # obj.connection.commit()
+        obj.connection.commit()
         return res
     return wrapped_cr
 
