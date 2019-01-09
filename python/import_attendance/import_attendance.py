@@ -368,10 +368,10 @@ def timedelta_strftime(delta):
 
 if __name__ == '__main__':
     start = datetime.now().astimezone()
-    _logger.info("\n\nAttendance Import Begun at %s" % start.strftime(DTF))
     ArgParser = CustomArgumentParser()
     configure_logger(ArgParser.args.output_file or 'fichada.log',
                      level=ArgParser.args.verbose and 'debug' or 'info')
+    _logger.info("\n\nAttendance Import Begun at %s" % start.strftime(DTF))
     ConfigFile = ConfigFileReader(ArgParser.args.config_file or 'config.ini')
     ConfigFile.validate()
 
