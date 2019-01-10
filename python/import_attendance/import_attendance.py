@@ -6,13 +6,14 @@ import configparser
 import functools
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib import machinery as ModuleImporter
 from pprint import pformat as pf
 
 import MySQLdb
 from MySQLdb import cursors
 import odoorpc
+from tzlocal import get_localzone
 
 
 _logger = logging.getLogger('import_attendances_to_odoo')
@@ -52,6 +53,12 @@ def configure_logger(filename, level='info'):
         _logger.setLevel('INFO')
     else:
         _logger.setLevel('DEBUG')
+
+
+def local_datetime():
+    local_tz = get_localzone()
+    utc_datetime = datetime.utcnow().replace(tzinfo=timezone.utc)
+    return utc_datetime.astimezone(tz=local_tz)
 
 
 class ConfigFileReader(configparser.ConfigParser):
@@ -162,6 +169,8 @@ class MysqlConnector():
         return file_ids
 
     def get_attendances_from_files(self, cr, file_ids):
+        if not file_ids:
+            return []
         query = """
         SELECT
             DATE_ADD(fi.fecha_hora, INTERVAL 3 HOUR) att_datetime,
@@ -185,8 +194,9 @@ class MysqlConnector():
         attendances = cr.dictfetchall()
         return attendances
 
+    @cr
     def mark_file_as_read(self, cr, file_ids):
-        load_time = datetime.now().strftime(DTF)
+        load_time = local_datetime().strftime(DTF)
         query = """
         UPDATE archivo
         SET
@@ -211,10 +221,11 @@ class MysqlConnector():
         attendances = self.get_attendances_from_files(cr, file_ids)
         _logger.debug(("MYSQL: Found %s attendances") %
                       (len(attendances)))
-        self.mark_file_as_read(cr, file_ids)
-        _logger.debug(("MYSQL: Marked %s files as read:\n\t%s") %
-                      (len(file_ids), pf(file_ids)))
-        return attendances
+        result = {
+            'attendances': attendances,
+            'file_ids': file_ids,
+        }
+        return result
 
 
 class OdooConnector():
@@ -308,7 +319,7 @@ class OdooConnector():
             partner_ref = attendance.get('att_partner_ref')
             employee = employee_model.search([('otherid', '=', partner_ref)])
             if len(employee) != 1:
-                _logger.warning(("ODOO: Employee with barcode '%s' was not" +
+                _logger.warning(("ODOO: Employee with barcode '%s' was not " +
                                  "found") % (partner_ref))
                 continue
             if not new_api:
@@ -367,25 +378,32 @@ def timedelta_strftime(delta):
 
 
 if __name__ == '__main__':
-    start = datetime.now().astimezone()
+    start = local_datetime()
     ArgParser = CustomArgumentParser()
     configure_logger(ArgParser.args.output_file or 'fichada.log',
                      level=ArgParser.args.verbose and 'debug' or 'info')
-    _logger.info("\n\nAttendance Import Begun at %s" % start.strftime(DTF))
+    _logger.info("Attendance Import Begun at %s" % start.strftime(DTF))
     ConfigFile = ConfigFileReader(ArgParser.args.config_file or 'config.ini')
     ConfigFile.validate()
 
     Mysql = MysqlConnector(**ConfigFile['mysql'])
     Odoo = OdooConnector(**ConfigFile['odoo'])
 
-    attendance_data = Mysql.get_data()
+    mysql_data = Mysql.get_data()
     _logger.info("MYSQL: Closing connection to MySQL")
+
+    attendances = Odoo.import_attendance(mysql_data.get('attendances'))
+
+    file_ids = mysql_data.get('file_ids')
+    Mysql.mark_file_as_read(file_ids)
+    _logger.debug(("MYSQL: Marked %s files as read:\n\t%s") %
+                  (len(file_ids), pf(file_ids)))
+
     Mysql.connection.close()
 
-    attendances = Odoo.import_attendance(attendance_data)
-    end = datetime.now().astimezone()
+    end = local_datetime()
     delta = end - start
     delta_str = timedelta_strftime(delta)
     _logger.info(("Attendance Import Finished at %s\nTime Elapsed: %s" +
-                  "\nAttendances Created: %s") %
+                  "\nAttendances Created: %s\n\n") %
                  (end.strftime(DTF), delta_str, len(attendances)))
